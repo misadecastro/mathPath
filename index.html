@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Mapa da Matematica</title>
+  <style>
+    body {
+      background-color: #14a804;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 2rem;
+    }
+
+    .mapa {
+      position: relative;
+      width: 800px;
+      height: 400px;
+      margin: 0 auto;
+    }
+
+    .fase {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      background-color: #f7f4f4;
+      border: 8px solid #f7f4f4;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 40px;
+      font-weight: bold;
+      z-index: 2;
+      transition: transform 0.3s;
+    }
+
+    .fase:hover {
+      transform: scale(1.2);
+      background-color: #ffcc00;
+      cursor: pointer;
+    }
+
+    /* Posições das fases */
+    .fase1 { top: 50px; left: 20px; }
+    .fase2 { top: 120px; left: 120px; }
+    .fase3 { top: 190px; left: 220px; }
+    .fase4 { top: 120px; left: 320px; }
+    .fase5 { top: 50px; left: 420px; }
+    .fase6 { top: 120px; left: 520px; }
+    .fase7 { top: 190px; left: 620px; }
+    .naoExibir{
+        display: none;
+    }
+    .selecionada{
+        transform: scale(1.2);
+        background-color: #ffcc00;
+    }
+    .erro{
+        color: red;
+        font-size: xx-small;
+    }
+  </style>
+  <script>
+    // Dicionário de respostas corretas para cada fase
+    const respostasFases = {
+        1: 154.9172,
+        2: 40.3481,
+        3: 61.002,
+        4: 45.3,
+        5: 0.3,
+        6: 4.3,
+        7: 49.7
+    };
+
+    function validarResposta(fase, resposta){        
+        limpar();
+        var valorResposta = parseFloat(resposta, 10);
+        var numFase = parseInt(fase, 10);
+        var respostaCorreta = respostasFases[numFase];
+        if (valorResposta === respostaCorreta) {
+            certaResposta(numFase);
+        }
+        else{
+            respostaErrada();
+        }
+    }
+    function limpar(){
+        var erroEl = document.getElementById('erro');
+        if (erroEl) {
+            erroEl.style.display = 'none';
+        }
+    }
+    function respostaErrada(){
+        var erroEl = document.getElementById('erro');
+        if (erroEl) {
+            erroEl.style.display = 'block';
+        }
+    }
+    function certaResposta(numFase){
+        // Remove destaque dos caminhos anteriores
+        var paths = document.querySelectorAll('svg path');
+        // Destaca o caminho para a próxima fase, se existir
+        var pathIndex = numFase - 1;
+        if (pathIndex >= 0 && pathIndex < paths.length) {
+            paths[pathIndex].setAttribute('stroke', '#f7f4f4');
+        }
+        var fase = ('fase' + (pathIndex+2)).replace('0','');
+        var el = document.getElementsByClassName(fase)[0];
+        if (el) {
+            el.classList.remove('naoExibir');
+        }
+    }
+    function selecionarFase(numeroFase){
+        document.getElementById('fase').textContent = numeroFase;
+        var el = document.getElementsByClassName('fase' + numeroFase)[0];
+        if (el) {
+            el.classList.add('selecionada');
+        }
+    }
+  </script>
+</head>
+<body>
+<h1 style="text-align:center; font-size:2.8rem; color:#fff; text-shadow:2px 2px 8px #0b5c02, 0 2px 0 #ffcc00; letter-spacing:2px; margin-bottom:2rem;">
+    <span style="background:rgba(255,204,0,0.85); padding:0.3em 1em; border-radius:18px; box-shadow:0 2px 12px rgba(0,0,0,0.15);">
+        Mapa da Matemática
+    </span>
+</h1>
+  <div class="mapa">
+    <div class="controle" style="position:absolute; top:10px; right:10px; z-index:3; background:#fff; padding:10px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+      <label id="faseAtualLabel" style="display:block; margin-bottom:8px; font-weight:bold;">
+        Fase atual: <span id="fase"></span>
+      </label>      
+      <input type="number" id="resposta" placeholder="Sua resposta" style="width:120px; padding:5px; border-radius:4px; border:1px solid #ccc;">
+      <button type="button" onclick="validarResposta(document.getElementById('fase').textContent, document.getElementById('resposta').value)" style="padding:5px 12px; border-radius:4px; border:none; background:#ffcc00; font-weight:bold; cursor:pointer;">OK</button>
+      <br>
+      <label id="erro" class="erro" style="display: none;">Errado tente novamente!</label>
+    </div>
+    <!-- Fases -->
+    <div class="fase fase1" onclick="selecionarFase(1);">1</div>
+    <div class="fase fase2 naoExibir" onclick="selecionarFase(2);">2</div>
+    <div class="fase fase3 naoExibir" onclick="selecionarFase(3);">3</div>
+    <div class="fase fase4 naoExibir" onclick="selecionarFase(4);">4</div>
+    <div class="fase fase5 naoExibir" onclick="selecionarFase(5);">5</div>
+    <div class="fase fase6 naoExibir" onclick="selecionarFase(6);">6</div>
+    <div class="fase fase7 naoExibir" onclick="selecionarFase(7);">7</div>
+
+    <!-- Caminho entre as fases usando SVG para linhas curvas -->
+    <svg width="800" height="400" style="position:absolute; left:0; top:0; z-index:1; pointer-events:none;">
+      <!-- 1 para 2 -->
+      <path id="path1" d="M40,70 Q80,100 140,140" stroke="#14a804" stroke-width="14" fill="none" />
+      <!-- 2 para 3 (ajustada para centralizar com a fase 2) -->
+      <path id="path1" d="M140,140 Q170,170 240,210" stroke="#14a804" stroke-width="14" fill="none" />
+      <!-- 3 para 4 -->
+      <path id="path1" d="M260,210 Q320,170 340,140" stroke="#14a804" stroke-width="14" fill="none" />
+      <!-- 4 para 5 -->
+      <path id="path1" d="M360,140 Q400,100 440,70" stroke="#14a804" stroke-width="14" fill="none" />
+      <!-- 5 para 6 -->
+      <path id="path1" d="M460,70 Q520,100 540,140" stroke="#14a804" stroke-width="14" fill="none" />
+      <!-- 6 para 7 -->
+      <path id="path1" d="M560,140 Q620,180 640,210" stroke="#14a804" stroke-width="14" fill="none" />
+    </svg>
+  </div>
+</body>
+</html>
