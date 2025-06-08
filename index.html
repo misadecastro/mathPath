@@ -57,17 +57,139 @@
         color: red;
         font-size: xx-small;
     }
+    .win{
+      position: absolute;      
+      z-index: 3; 
+      opacity: 0; 
+      transform: scale(0.7); 
+      transition: opacity 0.7s cubic-bezier(.4,2,.6,1), transform 0.7s cubic-bezier(.4,2,.6,1);
+    }
+    #win2{
+      left: 685px; 
+      top: 125px; 
+    }
+    #win1{
+      left: 285px; 
+      top: 5px; 
+    }
+    #win3{
+      left: 405px;
+      top: 402px;
+    }
   </style>
   <script>
+      function final(){
+        var efeito = document.getElementById('premioEfeito');
+        efeito.style.display = 'flex';
+        startConfete();
+      }
+
+      // Confete animado simples
+      function startConfete() {
+        const canvas = document.getElementById('confeteCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        let confetes = [];
+        for(let i=0;i<120;i++){
+          confetes.push({
+            x: Math.random()*canvas.width,
+            y: Math.random()*-canvas.height,
+            r: 6+Math.random()*10,
+            d: 2+Math.random()*4,
+            color: `hsl(${Math.random()*360},90%,60%)`,
+            tilt: Math.random()*10-10,
+            tiltAngle: 0,
+            tiltAngleIncremental: (Math.random()*0.07)+.05
+          });
+        }
+        let angle = 0;
+        function draw() {
+          ctx.clearRect(0,0,canvas.width,canvas.height);
+          for(let i=0;i<confetes.length;i++){
+            let c = confetes[i];
+            ctx.beginPath();
+            ctx.lineWidth = c.r;
+            ctx.strokeStyle = c.color;
+            ctx.moveTo(c.x + c.tilt + c.r/3, c.y);
+            ctx.lineTo(c.x + c.tilt, c.y + c.tilt + c.r);
+            ctx.stroke();
+          }
+          update();
+        }
+        function update() {
+          angle += 0.01;
+          for(let i=0;i<confetes.length;i++){
+            let c = confetes[i];
+            c.y += (Math.cos(angle + c.d) + 1 + c.r/2)/2;
+            c.x += Math.sin(angle);
+            c.tiltAngle += c.tiltAngleIncremental;
+            c.tilt = Math.sin(c.tiltAngle) * 15;
+            if(c.y > canvas.height){
+              c.x = Math.random()*canvas.width;
+              c.y = -10;
+            }
+          }
+        }
+        let anim;
+        function animate() {
+          draw();
+          anim = requestAnimationFrame(animate);
+        }
+        animate();
+        // Parar confete ao fechar
+        document.getElementById('premioEfeito').onmouseleave = document.getElementById('premioEfeito').onclick = function(){
+          cancelAnimationFrame(anim);
+          ctx.clearRect(0,0,canvas.width,canvas.height);
+        };
+      }
+      function salvarResultado(fase, resposta) {
+        let respostas = localStorage.getItem('respostas');
+        respostas = respostas ? JSON.parse(respostas) : {};
+        const faseNum = parseInt(fase, 10);
+        if (!(faseNum in respostas)) {
+          respostas[faseNum] = parseFloat(resposta);
+          localStorage.setItem('respostas', JSON.stringify(respostas));
+        }
+      }
+
+      function carregarRespostas() {
+        let respostas = localStorage.getItem('respostas');
+        let ultima = 0;
+        if (respostas) {
+          respostas = JSON.parse(respostas);
+          for (let fase in respostas) {
+            if (respostas.hasOwnProperty(fase)) {
+              selecionarFase(fase);
+              validarResposta(fase, respostas[fase]);
+            }
+            ultima++;
+          }
+          selecionarFase(ultima+1);
+        }
+      }
+
+      function surgirWin(win) {        
+        if(win) {
+          win.style.opacity = '1';
+          win.style.transform = 'scale(1)';
+        }
+      }
+
     // Dicionário de respostas corretas para cada fase
     const respostasFases = {
-        1: 154.9172,
-        2: 40.3481,
-        3: 61.002,
-        4: 45.3,
-        5: 0.3,
-        6: 4.3,
-        7: 49.7
+        1: 1,
+        2: 2,
+        3: 3,
+        4: 4,
+        5: 5,
+        6: 6,
+        7: 7,
+        8: 8,
+        9: 9,
+        10:10,
+        11:11,
+        12:12
     };
 
     function validarResposta(fase, resposta){        
@@ -77,6 +199,8 @@
         var respostaCorreta = respostasFases[numFase];
         if (valorResposta === respostaCorreta) {
             certaResposta(numFase);
+            salvarResultado(numFase, valorResposta);
+            selecionarFase(numFase+1);
         }
         else{
             respostaErrada();
@@ -84,8 +208,14 @@
     }
     function limpar(){
         var erroEl = document.getElementById('erro');
+        var resposta = document.getElementById('resposta');
+
         if (erroEl) {
             erroEl.style.display = 'none';
+        }
+
+        if (resposta) {
+            resposta.value = '';
         }
     }
     function respostaErrada(){
@@ -102,11 +232,27 @@
         if (pathIndex >= 0 && pathIndex < paths.length) {
             paths[pathIndex].setAttribute('stroke', '#f7f4f4');
         }
-        var fase = ('fase' + (pathIndex+2)).replace('0','');
+        var fase = ('fase' + (pathIndex+2));
         var el = document.getElementsByClassName(fase)[0];
         if (el) {
             el.classList.remove('naoExibir');
         }
+
+        if(numFase == 4){
+          var win1 = document.getElementById('win1');
+          surgirWin(win1);
+        }   
+        else if(numFase == 8){
+          var win2 = document.getElementById('win2');
+          surgirWin(win2);
+        }  
+        else if(numFase == 10){
+          var win3 = document.getElementById('win3');
+          surgirWin(win3);
+        }
+        else if(numFase == 12){
+          final();
+        }     
     }
     function selecionarFase(numeroFase){
         document.getElementById('fase').textContent = numeroFase;
@@ -117,7 +263,7 @@
     }
   </script>
 </head>
-<body>
+<body onload="setTimeout(carregarRespostas, 1000);"></body>
 <h1 style="text-align:center; font-size:2.8rem; color:#fff; text-shadow:2px 2px 8px #0b5c02, 0 2px 0 #ffcc00; letter-spacing:2px; margin-bottom:2rem;">
     <span style="background:rgba(255,204,0,0.85); padding:0.3em 1em; border-radius:18px; box-shadow:0 2px 12px rgba(0,0,0,0.15);">
         Mapa da Matemática
@@ -141,21 +287,70 @@
     <div class="fase fase5 naoExibir" onclick="selecionarFase(5);">5</div>
     <div class="fase fase6 naoExibir" onclick="selecionarFase(6);">6</div>
     <div class="fase fase7 naoExibir" onclick="selecionarFase(7);">7</div>
+    <div class="fase fase8 naoExibir" onclick="selecionarFase(8);" style="top: 260px; left: 720px;">8</div>
+    <div class="fase fase9 naoExibir" onclick="selecionarFase(9);" style="top: 330px; left: 620px;">9</div>
+    <div class="fase fase10 naoExibir" onclick="selecionarFase(10);" style="top: 330px; left: 420px;">10</div>
+    <div class="fase fase11 naoExibir" onclick="selecionarFase(11);" style="top: 260px; left: 320px;">11</div>
+    <div class="fase fase12 naoExibir" onclick="selecionarFase(12);" style="top: 330px; left: 120px;">12</div>
+    <div class="win" id="win1">
+      <div style="position: absolute;top: 60px;left: 50%;transform: translateX(-50%);color: #ffffff;padding: 6px 18px;border-radius: 12px;box-shadow: 0 2px 8px rgba(0,0,0,0.10);font-size: 1.1rem;z-index: 99;">Cinema</div>
+      <img src="win1.jpg" alt="Parabéns!" style="width: 90px; height: auto; border-radius: 18px; box-shadow: 0 2px 12px rgba(0,0,0,0.18); transform: rotate(-8deg); border: 4px solid #fff;">
+      <div style="position: absolute;left: 43%;top: 93%;width: 0;height: 0;border-left: 18px solid transparent;border-right: 18px solid transparent;border-top: 18px solid #fff;transform: rotate(350deg);"></div>
+    </div>
+    <div class="win" id="win2">
+      <div style="position: absolute;top: 60px;left: 50%;transform: translateX(-50%);color: #ffffff;padding: 6px 18px;border-radius: 12px;box-shadow: 0 2px 8px rgba(0,0,0,0.10);font-size: 1.1rem;z-index: 99;">Lilo & Stitch</div>
+      <img src="win2.jpg" alt="Parabéns!" style="width: 90px; height: auto; border-radius: 18px; box-shadow: 0 2px 12px rgba(0,0,0,0.18); transform: rotate(-8deg); border: 4px solid #fff;">
+      <div style="position: absolute;left: 43%;top: 93%;width: 0;height: 0;border-left: 18px solid transparent;border-right: 18px solid transparent;border-top: 18px solid #fff;transform: rotate(350deg);"></div>
+    </div>
+    <div class="win" id="win3">
+      <div style="position: absolute;top: 60px;left: 50%;transform: translateX(-50%);color: #ffffff;padding: 6px 18px;border-radius: 12px;box-shadow: 0 2px 8px rgba(0,0,0,0.10);font-size: 1.1rem;z-index: 99;">Pode Convidar +1</div>
+      <img src="win3.jpg" alt="Parabéns!" style="width: 90px; height: auto; border-radius: 18px; box-shadow: 0 2px 12px rgba(0,0,0,0.18); transform: rotate(-8deg); border: 4px solid #fff;">
+      <div style="position: absolute;left: 23%;top: -12%;width: 0;height: 0;border-left: 18px solid transparent;border-right: 18px solid transparent;border-top: 18px solid #fff;transform: rotate(173deg);"></div>
+    </div>
+    <!-- Efeito de premiação -->
+    <div id="premioEfeito" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(20,168,4,0.92); z-index:9999; align-items:center; justify-content:center; flex-direction:column;">
+      <img src="final.jpg" alt="Premiação" style="width:260px; border-radius:24px; box-shadow:0 8px 32px rgba(0,0,0,0.25); animation: premioPop 1.2s cubic-bezier(.4,2,.6,1);">
+      <div style="color:#fff; font-size:2.2rem; margin-top:1.2em; text-shadow:2px 2px 12px #0b5c02, 0 2px 0 #ffcc00; font-weight:bold;">
+        Parabéns! Você ganhou a premiação!
+      </div>
+      <button onclick="document.getElementById('premioEfeito').style.display='none';" style="margin-top:2em; padding:10px 28px; border-radius:8px; border:none; background:#fff; color:#14a804; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.10);">
+        Fechar
+      </button>
+      <!-- Confetes animados -->
+      <canvas id="confeteCanvas" style="position:absolute; left:0; top:0; width:100vw; height:100vh; pointer-events:none;"></canvas>
+    </div>
 
+    <style>
+    @keyframes premioPop {
+      0% { transform: scale(0.5) rotate(-10deg); opacity:0; }
+      60% { transform: scale(1.15) rotate(6deg); opacity:1; }
+      100% { transform: scale(1) rotate(0deg); opacity:1; }
+    }
+    </style>
     <!-- Caminho entre as fases usando SVG para linhas curvas -->
     <svg width="800" height="400" style="position:absolute; left:0; top:0; z-index:1; pointer-events:none;">
       <!-- 1 para 2 -->
-      <path id="path1" d="M40,70 Q80,100 140,140" stroke="#14a804" stroke-width="14" fill="none" />
-      <!-- 2 para 3 (ajustada para centralizar com a fase 2) -->
-      <path id="path1" d="M140,140 Q170,170 240,210" stroke="#14a804" stroke-width="14" fill="none" />
+      <path d="M40,70 Q80,100 140,140" stroke="#14a804" stroke-width="14" fill="none" />
+      <!-- 2 para 3 -->
+      <path d="M140,140 Q170,170 240,210" stroke="#14a804" stroke-width="14" fill="none" />
       <!-- 3 para 4 -->
-      <path id="path1" d="M260,210 Q320,170 340,140" stroke="#14a804" stroke-width="14" fill="none" />
+      <path d="M260,210 Q320,170 340,140" stroke="#14a804" stroke-width="14" fill="none" />
       <!-- 4 para 5 -->
-      <path id="path1" d="M360,140 Q400,100 440,70" stroke="#14a804" stroke-width="14" fill="none" />
+      <path d="M360,140 Q400,100 440,70" stroke="#14a804" stroke-width="14" fill="none" />
       <!-- 5 para 6 -->
-      <path id="path1" d="M460,70 Q520,100 540,140" stroke="#14a804" stroke-width="14" fill="none" />
+      <path d="M460,70 Q520,100 540,140" stroke="#14a804" stroke-width="14" fill="none" />
       <!-- 6 para 7 -->
-      <path id="path1" d="M560,140 Q620,180 640,210" stroke="#14a804" stroke-width="14" fill="none" />
+      <path d="M560,140 Q620,180 640,210" stroke="#14a804" stroke-width="14" fill="none" />
+      <!-- 7 para 8 -->
+      <path d="M660,210 Q720,240 740,280" stroke="#14a804" stroke-width="14" fill="none" />
+      <!-- 8 para 9 -->
+      <path d="M740,280 Q700,330 640,350" stroke="#14a804" stroke-width="14" fill="none" />
+      <!-- 9 para 10 -->
+      <path d="M625,360 Q520,370 440,350" stroke="#14a804" stroke-width="14" fill="none" />
+      <!-- 10 para 11 -->
+      <path d="M425,350 Q340,330 340,280" stroke="#14a804" stroke-width="14" fill="none" />
+      <!-- 11 para 12 -->
+      <path d="M325,295 Q200,350 140,350" stroke="#14a804" stroke-width="14" fill="none" />
     </svg>
   </div>
 </body>
